@@ -6,7 +6,7 @@ import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import Badge from '../components/ui/Badge';
-import { getNotifications, markNotificationAsRead, sendNotification, subscribeToNotifications, deleteNotification } from '../services/data';
+import { getNotifications, markNotificationAsRead, sendNotification, subscribeToNotifications, deleteNotification, getCustomers } from '../services/data';
 import { format } from 'date-fns';
 
 const NotificationsPage = () => {
@@ -15,6 +15,7 @@ const NotificationsPage = () => {
   const [notifications, setNotifications] = useState([]);
   const [filteredNotifications, setFilteredNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [customers, setCustomers] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [audienceFilter, setAudienceFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -44,11 +45,24 @@ const NotificationsPage = () => {
   ];
 
   useEffect(() => {
+    // Load customers data
+    const loadCustomers = async () => {
+      try {
+        const customersData = await getCustomers();
+        console.log('✅ Loaded customers:', customersData.length, 'customers');
+        setCustomers(customersData);
+      } catch (error) {
+        console.error('❌ Error loading customers:', error);
+      }
+    };
+
     // Set up real-time listener for notifications
     const unsubscribeNotifications = subscribeToNotifications((notificationsData) => {
       setNotifications(notificationsData);
       setLoading(false);
     });
+
+    loadCustomers();
 
     return () => {
       unsubscribeNotifications();
@@ -75,11 +89,14 @@ const NotificationsPage = () => {
     let filtered = notifications;
 
     if (searchTerm) {
-      filtered = filtered.filter(notification => 
-        notification.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        notification.message?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        notification.audience?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+      filtered = filtered.filter(notification => {
+        const enhancedMessage = getEnhancedMessage(notification);
+        return (
+          notification.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          enhancedMessage?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          notification.audience?.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+      });
     }
 
     if (audienceFilter !== 'all') {
@@ -212,6 +229,48 @@ const NotificationsPage = () => {
         if (notification.priority === 'urgent') return ['fas', 'exclamation-triangle'];
         return ['fas', 'bell'];
     }
+  };
+
+  const getCustomerName = (customerId) => {
+    if (!customerId || !customers.length) return null;
+    
+    const customer = customers.find(c => c.id === customerId);
+    
+    if (customer) {
+      // Try different possible name fields
+      const name = customer.name || 
+                   customer.fullName || 
+                   customer.customerName ||
+                   (customer.firstName && customer.lastName ? `${customer.firstName} ${customer.lastName}` : null) ||
+                   customer.email;
+      return name;
+    }
+    
+    return null;
+  };
+
+  const getEnhancedMessage = (notification) => {
+    // Only enhance for dispatch_created or new_request
+    if ((notification.type === 'dispatch_created' || notification.type === 'new_request')) {
+      let customerName = notification.customerName;
+      if (!customerName && notification.customerId) {
+        customerName = getCustomerName(notification.customerId);
+      }
+      if (customerName) {
+        // If message already contains the customer name, just return it
+        if (notification.message && notification.message.includes(customerName)) {
+          return notification.message;
+        }
+        // Otherwise, inject the customer name
+        if (notification.message && notification.message.startsWith('Customer created')) {
+          return notification.message.replace('Customer created', `Customer ${customerName} created`);
+        }
+        // Fallback: prepend customer name
+        return `Customer ${customerName} created a new dispatch request` + (notification.message ? (': ' + notification.message) : '');
+      }
+    }
+    // Fallback: return message as-is
+    return notification.message;
   };
 
   const getNotificationDescription = (notification) => {
@@ -398,7 +457,7 @@ const NotificationsPage = () => {
                       </div>
                     </div>
                     <p className={`mt-1 text-sm ${notification.isRead ? 'text-gray-600' : 'text-gray-700'} line-clamp-2`}>
-                      {notification.message}
+                      {getEnhancedMessage(notification)}
                     </p>
                     {getNotificationDescription(notification) && (
                       <p className="mt-1 text-xs text-green-600 font-medium">
@@ -595,7 +654,7 @@ const NotificationsPage = () => {
               </div>
 
               <div className="bg-gray-50 p-4 rounded-lg">
-                <p className="text-gray-700">{selectedNotification.message}</p>
+                <p className="text-gray-700">{getEnhancedMessage(selectedNotification)}</p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -612,7 +671,7 @@ const NotificationsPage = () => {
                       <p><strong>Recipient:</strong> {selectedNotification.recipientId}</p>
                     )}
                     {selectedNotification.customerId && (
-                      <p><strong>Customer ID:</strong> {selectedNotification.customerId}</p>
+                      <p><strong>Customer:</strong> {getCustomerName(selectedNotification.customerId) || selectedNotification.customerId}</p>
                     )}
                     {selectedNotification.dispatchId && (
                       <p><strong>Dispatch ID:</strong> {selectedNotification.dispatchId}</p>

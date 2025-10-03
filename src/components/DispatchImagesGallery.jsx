@@ -95,11 +95,18 @@ const DispatchImagesGallery = ({ dispatchId, onClose }) => {
                   >
                     <img
                       src={image.imageUrl}
-                      alt={image.description || 'Dispatch image'}
+                      alt={image.message || image.description || 'Dispatch image'}
                       className="w-full h-full object-cover"
                     />
-                    <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs p-1 truncate">
-                      {format(new Date(image.uploadedAt.seconds ? image.uploadedAt.seconds * 1000 : image.uploadedAt), 'MMM dd, HH:mm')}
+                    <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-75 text-white text-xs p-1">
+                      <div className="truncate">
+                        {format(new Date(image.uploadedAt.seconds ? image.uploadedAt.seconds * 1000 : image.uploadedAt), 'MMM dd, HH:mm')}
+                      </div>
+                      {image.message && (
+                        <div className="truncate text-yellow-200 font-medium">
+                          {image.message}
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -133,11 +140,20 @@ const DispatchImagesGallery = ({ dispatchId, onClose }) => {
               <div className="p-4">
                 <img
                   src={selectedImage.imageUrl}
-                  alt={selectedImage.description || 'Dispatch image'}
+                  alt={selectedImage.message || selectedImage.description || 'Dispatch image'}
                   className="max-w-full max-h-96 mx-auto"
                 />
+                {selectedImage.message && (
+                  <div className="mt-4 p-3 bg-blue-50 border-l-4 border-blue-400 rounded-r">
+                    <p className="text-blue-800 font-medium">Message:</p>
+                    <p className="text-blue-700">{selectedImage.message}</p>
+                  </div>
+                )}
                 {selectedImage.description && (
-                  <p className="mt-4 text-gray-700">{selectedImage.description}</p>
+                  <div className="mt-4 p-3 bg-gray-50 border-l-4 border-gray-400 rounded-r">
+                    <p className="text-gray-800 font-medium">Description:</p>
+                    <p className="text-gray-700">{selectedImage.description}</p>
+                  </div>
                 )}
               </div>
             </div>
