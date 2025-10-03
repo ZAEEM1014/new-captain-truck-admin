@@ -7,6 +7,7 @@ import Badge from '../components/ui/Badge';
 import { getTrucks, createTruck, updateTruck, deleteTruck, subscribeToTrucks } from '../services/data';
 import { format } from 'date-fns';
 
+
 export const truckTypes = [
   { value: 'turnpike-double-btrain', label: 'Turnpike Double / B-Train' },
   { value: 'route-planning-permits', label: 'Route planning & permits' },
@@ -25,6 +26,18 @@ export const truckTypes = [
   { value: 'expedited-hotshot-5ton', label: 'Expedited & Hot Shot / 5-Ton' }
 ];
 
+const statusOptions = [
+  { value: 'operational', label: 'Operational', color: 'green' },
+  { value: 'inactive', label: 'Inactive', color: 'red' }
+];
+
+const fuelTypeOptions = [
+  { value: 'diesel', label: 'Diesel' },
+  { value: 'petrol', label: 'Petrol' },
+  { value: 'cng', label: 'CNG' },
+  { value: 'electric', label: 'Electric' }
+];
+
 const TrucksPage = () => {
   const [trucks, setTrucks] = useState([]);
   const [filteredTrucks, setFilteredTrucks] = useState([]);
@@ -39,24 +52,24 @@ const TrucksPage = () => {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [editTruck, setEditTruck] = useState(null);
 
+
+
+
   const [newTruck, setNewTruck] = useState({
     truckNumber: '',
     plateNumber: '',
-    truckType: 'flatbed',
+    truckType: truckTypes[0].value, // Default to first dropdown option
     capacity: '',
-    status: 'operational',
+    status: statusOptions[0].value, // Default to first status option
     make: '',
     model: '',
     modelYear: '',
-    fuelType: 'diesel',
+    fuelType: fuelTypeOptions[0].value, // Default to first fuel type option
     truckImage: null
   });
 
 
-  const statusOptions = [
-    { value: 'operational', label: 'Operational', color: 'green' },
-    { value: 'inactive', label: 'Inactive', color: 'red' }
-  ];
+  // ...existing code...
 
   useEffect(() => {
     // Set up real-time listener for trucks
@@ -112,10 +125,12 @@ const TrucksPage = () => {
   const handleAddTruck = async (e) => {
     e.preventDefault();
     try {
-      console.log('Adding truck with type:', newTruck.truckType, newTruck);
+      // Find the label for the selected truckType value
+      const selectedType = truckTypes.find(type => type.value === newTruck.truckType);
+      const truckTypeLabel = selectedType ? selectedType.label : newTruck.truckType;
       await createTruck({
         ...newTruck,
-        truckType: newTruck.truckType,
+        truckType: truckTypeLabel,
         capacity: Number(newTruck.capacity),
         modelYear: Number(newTruck.modelYear),
       });
@@ -161,9 +176,12 @@ const TrucksPage = () => {
   const handleUpdateTruck = async (e) => {
     e.preventDefault();
     try {
+      // Find the label for the selected truckType value
+      const selectedType = truckTypes.find(type => type.value === editTruck.type);
+      const truckTypeLabel = selectedType ? selectedType.label : editTruck.type;
       const updatedData = {
         ...editTruck,
-        truckType: editTruck.type,
+        truckType: truckTypeLabel,
         capacity: Number(editTruck.capacity),
         modelYear: Number(editTruck.modelYear),
       };
