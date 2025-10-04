@@ -565,28 +565,8 @@ exports.notifyNewDispatchRequest = functions.firestore
       const sourceAddress = dispatchData.sourceLocation?.address || dispatchData.sourceLocation || 'Unknown Source';
       const destinationAddress = dispatchData.destinationLocation?.address || dispatchData.destinationLocation || 'Unknown Destination';
       
-      // Send notification to admin notifications collection
-      await db.collection('notifications').add({
-        type: 'new_request',
-        title: 'New Dispatch Request',
-        message: `${customerName} has created a new dispatch request: ${sourceAddress} → ${destinationAddress}`,
-        dispatchId: dispatchData.dispatchId || dispatchId,
-        tripId: dispatchData.dispatchId || dispatchId,
-        tripDetails: {
-          customerId: dispatchData.customerId,
-          customerName,
-          sourceLocation: dispatchData.sourceLocation,
-          destinationLocation: dispatchData.destinationLocation,
-          requestedTime: dispatchData.pickupDateTime || dispatchData.createdAt,
-          status: dispatchData.status || 'pending'
-        },
-        priority: 'high',
-        adminOnly: true,
-        isRead: false,
-        createdAt: admin.firestore.FieldValue.serverTimestamp()
-      });
-      
-      console.log(`✅ New dispatch notification sent for ${customerName}`);
+      // (Removed) No longer creating a global notification for new dispatch requests
+      console.log(`ℹ️ Skipped global notification for new dispatch request by ${customerName}`);
       
     } catch (error) {
       console.error(`❌ Error sending new dispatch notification:`, error);
