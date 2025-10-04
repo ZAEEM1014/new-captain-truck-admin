@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "homepage": "https://farazse23.github.io/captain-admin",
+  "homepage": "https://ZAEEM1014.github.io/new-captain-truck-admin",
   "scripts": {
     "dev": "vite",
     "build": "vite build && copy public\\logo.png dist\\logo.png",
