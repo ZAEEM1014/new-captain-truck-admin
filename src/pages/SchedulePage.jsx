@@ -404,7 +404,17 @@ const SchedulePage = () => {
                     const status = getCachedStatus('driver', driver.id, date);
                     const dayAssignments = getAssignmentsForSpecificDate(date);
                     const driverAssignment = dayAssignments.find(a => a.driverId === driver.id);
-                    
+                    let assignmentStatus = driverAssignment ? driverAssignment.status : null;
+                    // Fix: If assignment is completed, show 'Completed' badge
+                    let badgeLabel = assignmentStatus;
+                    let badgeColorMap = {
+                      'assigned': 'yellow',
+                      'in-progress': 'blue',
+                      'completed': 'green',
+                      'cancelled': 'red',
+                      'on-trip': 'blue'
+                    };
+                    if (assignmentStatus === 'completed') badgeLabel = 'Completed';
                     return (
                       <td key={dateIndex} className={`p-2 text-center transition-colors ${
                         isToday(date) ? 'bg-gradient-to-b from-blue-50 to-blue-100' : 'hover:bg-gray-50'
@@ -428,11 +438,8 @@ const SchedulePage = () => {
                                    'Destination'}
                             </div>
                             <Badge 
-                              status={isToday(date) ? 'on-trip' : 'assigned'}
-                              customColors={{
-                                'on-trip': 'blue',
-                                'assigned': 'yellow'
-                              }}
+                              status={badgeLabel}
+                              customColors={badgeColorMap}
                             />
                           </div>
                         ) : (
@@ -522,7 +529,7 @@ const SchedulePage = () => {
                     const status = getCachedStatus('truck', truck.id, date);
                     const dayAssignments = getAssignmentsForSpecificDate(date);
                     const truckAssignment = dayAssignments.find(a => a.truckId === truck.id);
-                    
+                    const assignmentStatus = truckAssignment ? truckAssignment.status : null;
                     return (
                       <td key={dateIndex} className={`p-2 text-center transition-colors ${
                         isToday(date) ? 'bg-gradient-to-b from-green-50 to-green-100' : 'hover:bg-gray-50'
@@ -546,8 +553,13 @@ const SchedulePage = () => {
                                    'Destination'}
                             </div>
                             <Badge 
-                              status="assigned"
-                              customColors={{ 'assigned': 'green' }}
+                              status={assignmentStatus}
+                              customColors={{
+                                'assigned': 'yellow',
+                                'in-progress': 'blue',
+                                'completed': 'green',
+                                'cancelled': 'red'
+                              }}
                             />
                           </div>
                         ) : (
