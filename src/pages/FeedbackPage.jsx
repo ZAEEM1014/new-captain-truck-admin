@@ -221,7 +221,6 @@ const FeedbackPage = () => {
                         </div>
                         <div className="ml-4">
                           <div className="text-sm font-medium text-gray-900">{feedback.customerEmail || 'Unknown'}</div>
-                          <div className="text-sm text-gray-500">{feedback.customerId}</div>
                         </div>
                       </div>
                     </td>
@@ -283,7 +282,6 @@ const FeedbackPage = () => {
                   <h4 className="font-medium text-gray-900 mb-3">Customer Information</h4>
                   <div className="space-y-2">
                     <p><strong>Email:</strong> {selectedFeedback.customerEmail || 'Unknown'}</p>
-                    <p><strong>Customer ID:</strong> {selectedFeedback.customerId}</p>
                     <p><strong>Date Submitted:</strong> {selectedFeedback.timestamp && format(selectedFeedback.timestamp.toDate(), 'MMM dd, yyyy HH:mm')}</p>
                   </div>
                 </div>
@@ -292,7 +290,6 @@ const FeedbackPage = () => {
                   <h4 className="font-medium text-gray-900 mb-3">Feedback Information</h4>
                   <div className="space-y-2">
                     <p><strong>Type:</strong> {getTypeBadge(selectedFeedback.type)}</p>
-                    <p><strong>Feedback ID:</strong> {selectedFeedback.id}</p>
                   </div>
                 </div>
               </div>

@@ -118,44 +118,60 @@ const DispatchImagesGallery = ({ dispatchId, onClose }) => {
 
       {/* Image Modal */}
       {selectedImage && (
-        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50" onClick={() => setSelectedImage(null)}>
-          <div className="max-w-4xl max-h-full p-4">
-            <div className="bg-white rounded-lg overflow-hidden">
-              <div className="flex justify-between items-center p-4 border-b">
-                <div>
-                  <h3 className="font-medium">
-                    {drivers.find(d => d.id === selectedImage.driverId)?.name || 'Unknown Driver'}
-                  </h3>
-                  <p className="text-sm text-gray-500">
-                    {format(new Date(selectedImage.uploadedAt.seconds ? selectedImage.uploadedAt.seconds * 1000 : selectedImage.uploadedAt), 'PPpp')}
-                  </p>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-80">
+          <div className="relative bg-white rounded-xl shadow-2xl max-w-md w-full mx-4 animate-fadeIn">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  {drivers.find(d => d.id === selectedImage.driverId)?.name || 'Unknown Driver'}
+                </h3>
+                <p className="text-xs text-gray-500 mt-1">
+                  {format(new Date(selectedImage.uploadedAt.seconds ? selectedImage.uploadedAt.seconds * 1000 : selectedImage.uploadedAt), 'PPpp')}
+                </p>
+              </div>
+              <button
+                onClick={() => setSelectedImage(null)}
+                className="ml-4 text-gray-400 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-full p-2 transition"
+                aria-label="Close image modal"
+              >
+                <FontAwesomeIcon icon={['fas', 'times']} size="lg" />
+              </button>
+            </div>
+            {/* Image */}
+            <div className="flex flex-col items-center px-6 py-6">
+              <div className="flex justify-center items-center w-full" style={{ minHeight: '240px' }}>
+                <div style={{ width: '320px', height: '320px', background: '#f3f4f6', borderRadius: '0.75rem', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #e5e7eb' }}>
+                  <img
+                    src={selectedImage.imageUrl}
+                    alt={selectedImage.message || selectedImage.description || 'Dispatch image'}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                  />
                 </div>
-                <button
-                  onClick={() => setSelectedImage(null)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <FontAwesomeIcon icon={['fas', 'times']} />
-                </button>
               </div>
-              <div className="p-4">
-                <img
-                  src={selectedImage.imageUrl}
-                  alt={selectedImage.message || selectedImage.description || 'Dispatch image'}
-                  className="max-w-full max-h-96 mx-auto"
-                />
-                {selectedImage.message && (
-                  <div className="mt-4 p-3 bg-blue-50 border-l-4 border-blue-400 rounded-r">
-                    <p className="text-blue-800 font-medium">Message:</p>
-                    <p className="text-blue-700">{selectedImage.message}</p>
-                  </div>
-                )}
-                {selectedImage.description && (
-                  <div className="mt-4 p-3 bg-gray-50 border-l-4 border-gray-400 rounded-r">
-                    <p className="text-gray-800 font-medium">Description:</p>
-                    <p className="text-gray-700">{selectedImage.description}</p>
-                  </div>
-                )}
-              </div>
+              {/* Message/Description Section */}
+              {(selectedImage.message || selectedImage.description) && (
+                <div className="w-full mt-6">
+                  {selectedImage.message && (
+                    <div className="mb-3 p-4 rounded-lg bg-blue-50 border border-blue-200 flex items-start">
+                      <FontAwesomeIcon icon="comment-dots" className="text-blue-400 mr-3 mt-1" size="lg" />
+                      <div>
+                        <div className="text-xs text-blue-700 font-semibold mb-1">Message</div>
+                        <div className="text-blue-900 text-base leading-relaxed break-words">{selectedImage.message}</div>
+                      </div>
+                    </div>
+                  )}
+                  {selectedImage.description && (
+                    <div className="p-4 rounded-lg bg-gray-50 border border-gray-200 flex items-start">
+                      <FontAwesomeIcon icon="info-circle" className="text-gray-400 mr-3 mt-1" size="lg" />
+                      <div>
+                        <div className="text-xs text-gray-700 font-semibold mb-1">Description</div>
+                        <div className="text-gray-900 text-base leading-relaxed break-words">{selectedImage.description}</div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>

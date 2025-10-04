@@ -40,7 +40,7 @@ const NotificationsPage = () => {
   const priorityOptions = [
     { value: 'low', label: 'Low', color: 'gray' },
     { value: 'normal', label: 'Normal', color: 'blue' },
-    { value: 'high', label: 'High', color: 'yellow' },
+    { value: 'high', label: 'High', color: 'orange' }, // Changed from yellow to orange
     { value: 'urgent', label: 'Urgent', color: 'red' },
   ];
 
@@ -447,7 +447,7 @@ const NotificationsPage = () => {
                           customColors={{
                             low: 'gray',
                             normal: 'blue',
-                            high: 'yellow',
+                            high: 'orange', // Changed from yellow to orange
                             urgent: 'red'
                           }}
                         />
