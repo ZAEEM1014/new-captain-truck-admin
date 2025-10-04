@@ -430,8 +430,8 @@ async function sendStatusChangeNotifications(dispatchId, newStatus, dispatch) {
       return;
     }
     
-    // Send notification to customer's subcollection
-    if (dispatch.customerId) {
+    // Prevent duplicate 'completed' notifications: skip customer notification here if status is 'completed'
+    if (dispatch.customerId && newStatus !== 'completed') {
       try {
         // Find the customer document
         const customersQuery = await db.collection('customers').get();
@@ -466,8 +466,8 @@ async function sendStatusChangeNotifications(dispatchId, newStatus, dispatch) {
       }
     }
     
-    // Send notifications to drivers (for completion and other status changes)
-    if (dispatch.driverAssignments) {
+    // Prevent duplicate 'completed' notifications: skip driver notification here if status is 'completed'
+    if (dispatch.driverAssignments && newStatus !== 'completed') {
       const driverIds = Object.keys(dispatch.driverAssignments);
       console.log(`📧 Sending notifications to ${driverIds.length} drivers for dispatch ${dispatchId}`);
       
@@ -476,10 +476,7 @@ async function sendStatusChangeNotifications(dispatchId, newStatus, dispatch) {
           let notificationMessage = '';
           let notificationTitle = '';
           
-          if (newStatus === 'completed') {
-            notificationTitle = 'Dispatch Completed';
-            notificationMessage = `Dispatch #${dispatch.dispatchId || dispatchId} has been completed successfully. All team members have finished their trips.`;
-          } else if (newStatus === 'in-progress') {
+          if (newStatus === 'in-progress') {
             notificationTitle = 'Dispatch In Progress';
             notificationMessage = `Dispatch #${dispatch.dispatchId || dispatchId} is now in progress. One or more team members have started their trips.`;
           }
@@ -504,19 +501,21 @@ async function sendStatusChangeNotifications(dispatchId, newStatus, dispatch) {
       }
     }
     
-    // Send global admin notification to main collection
-    await db.collection('notifications').add({
-      type: 'dispatch_status_update',
-      title: 'Dispatch Status Updated',
-      message: `Dispatch #${dispatch.dispatchId || dispatchId} status changed to ${newStatus}. ${newStatus === 'completed' ? 'All drivers have completed their trips.' : 'Trip is now in progress.'}`,
-      dispatchId: dispatchId,
-      priority: newStatus === 'completed' ? 'high' : 'normal',
-      read: false,
-      isGlobal: true,
-      createdAt: admin.firestore.FieldValue.serverTimestamp()
-    });
-    
-    console.log(`🔔 Global admin notification sent for dispatch ${dispatchId}`);
+    // Prevent duplicate admin notification for 'completed' status
+    if (newStatus !== 'completed') {
+      await db.collection('notifications').add({
+        type: 'dispatch_status_update',
+        title: 'Dispatch Status Updated',
+        message: `Dispatch #${dispatch.dispatchId || dispatchId} status changed to ${newStatus}. ${newStatus === 'completed' ? 'All drivers have completed their trips.' : 'Trip is now in progress.'}`,
+        dispatchId: dispatchId,
+        priority: newStatus === 'completed' ? 'high' : 'normal',
+        read: false,
+        isGlobal: true,
+        createdAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+      
+      console.log(`🔔 Global admin notification sent for dispatch ${dispatchId}`);
+    }
     
   } catch (error) {
     console.error(`❌ Error sending notifications:`, error);
