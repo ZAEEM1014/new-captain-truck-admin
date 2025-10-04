@@ -97,82 +97,91 @@ exports.sendDriverPushNotification = functions.firestore
  */
 exports.sendCustomerPushNotification = functions.firestore
   .document('customers/{customerId}/notifications/{notificationId}')
-  .onCreate(async (snap, context) => {
+  .onWrite(async (change, context) => {
     try {
-      const { customerId, notificationId } = context.params;
-      const notificationData = snap.data();
-      
-      console.log(`📱 New notification for customer ${customerId}:`, notificationData);
-      
-      // Get customer document to retrieve FCM token
-      const customerDoc = await db.collection('customers').doc(customerId).get();
-      
-      if (!customerDoc.exists) {
-        console.log(`❌ Customer ${customerId} not found`);
-        return;
-      }
-      
-      const customerData = customerDoc.data();
-      const fcmToken = customerData.fcmToken;
-      
-      if (!fcmToken) {
-        console.log(`❌ No FCM token found for customer ${customerId}`);
-        return;
-      }
-      
-      // Prepare push notification message
-      const message = {
-        token: fcmToken,
-        notification: {
-          title: notificationData.title || 'Captain Truck',
-          body: notificationData.message || 'You have a new notification',
-        },
-        data: {
-          type: notificationData.type || 'general',
-          notificationId: notificationId,
-          customerId: customerId,
-          timestamp: (notificationData.timestamp || new Date()).toString(),
-          priority: notificationData.priority || 'normal'
-        },
-        android: {
+      // Only send push if document is being created and pushNotificationSent is not set
+      if (!change.before.exists && change.after.exists) {
+        const snap = change.after;
+        const { customerId, notificationId } = context.params;
+        const notificationData = snap.data();
+
+        if (notificationData.pushNotificationSent) {
+          console.log(`🚫 Duplicate push prevented for customer ${customerId}, notification ${notificationId}`);
+          return;
+        }
+
+        console.log(`� New notification for customer ${customerId}:`, notificationData);
+
+        // Get customer document to retrieve FCM token
+        const customerDoc = await db.collection('customers').doc(customerId).get();
+
+        if (!customerDoc.exists) {
+          console.log(`❌ Customer ${customerId} not found`);
+          return;
+        }
+
+        const customerData = customerDoc.data();
+        const fcmToken = customerData.fcmToken;
+
+        if (!fcmToken) {
+          console.log(`❌ No FCM token found for customer ${customerId}`);
+          return;
+        }
+
+        // Prepare push notification message
+        const message = {
+          token: fcmToken,
           notification: {
-            icon: 'ic_notification',
-            color: '#2563eb',
-            sound: 'default',
-            priority: notificationData.priority === 'high' ? 'high' : 'normal'
-          }
-        },
-        apns: {
-          payload: {
-            aps: {
+            title: notificationData.title || 'Captain Truck',
+            body: notificationData.message || 'You have a new notification',
+          },
+          data: {
+            type: notificationData.type || 'general',
+            notificationId: notificationId,
+            customerId: customerId,
+            timestamp: (notificationData.timestamp || new Date()).toString(),
+            priority: notificationData.priority || 'normal'
+          },
+          android: {
+            notification: {
+              icon: 'ic_notification',
+              color: '#2563eb',
               sound: 'default',
-              badge: 1,
-              'content-available': 1
+              priority: notificationData.priority === 'high' ? 'high' : 'normal'
+            }
+          },
+          apns: {
+            payload: {
+              aps: {
+                sound: 'default',
+                badge: 1,
+                'content-available': 1
+              }
             }
           }
-        }
-      };
-      
-      // Send push notification
-      const response = await admin.messaging().send(message);
-      console.log(`✅ Push notification sent successfully to customer ${customerId}:`, response);
-      
-      // Update notification document to mark as pushed
-      await snap.ref.update({
-        pushNotificationSent: true,
-        pushNotificationSentAt: admin.firestore.FieldValue.serverTimestamp(),
-        fcmResponse: response
-      });
-      
+        };
+
+        // Send push notification
+        const response = await admin.messaging().send(message);
+        console.log(`✅ Push notification sent successfully to customer ${customerId}:`, response);
+
+        // Update notification document to mark as pushed
+        await snap.ref.update({
+          pushNotificationSent: true,
+          pushNotificationSentAt: admin.firestore.FieldValue.serverTimestamp(),
+          fcmResponse: response
+        });
+      }
     } catch (error) {
       console.error(`❌ Error sending push notification to customer:`, error);
-      
-      // Update notification document to mark push as failed
-      await snap.ref.update({
-        pushNotificationSent: false,
-        pushNotificationError: error.message,
-        pushNotificationFailedAt: admin.firestore.FieldValue.serverTimestamp()
-      });
+      // If possible, update the notification document to mark push as failed
+      if (change.after && change.after.ref) {
+        await change.after.ref.update({
+          pushNotificationSent: false,
+          pushNotificationError: error.message,
+          pushNotificationFailedAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+      }
     }
   });
 
@@ -501,8 +510,8 @@ async function sendStatusChangeNotifications(dispatchId, newStatus, dispatch) {
       }
     }
     
-    // Prevent duplicate admin notification for 'completed' status
-    if (newStatus !== 'completed') {
+    // Prevent duplicate admin notification for 'completed' and 'assigned' status
+    if (newStatus !== 'completed' && newStatus !== 'assigned') {
       await db.collection('notifications').add({
         type: 'dispatch_status_update',
         title: 'Dispatch Status Updated',
